@@ -39,4 +39,4 @@ git commit -a
 
 - Push to master repo:
 
-git push https://github.com/UCAR/ACD_terminator.git
+git push https://github.com/PeterHjortLauritzen/topo-gmd.git
