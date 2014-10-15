@@ -29,10 +29,10 @@
 
 \author[1]{Julio Bacmeister}
 \author[1]{Peter Hjort Lauritzen}
-\author[1]{Patrick }
+\author[1]{Patrick Callaghan}
 
-\affil[1]{1850 Table Mesa Drive, Boulder, Colorado, USA}
-\affil[2]{ADDRESS}
+\affil[1]{National Center for Atmospheric Research, 1850 Table Mesa Drive, Boulder, Colorado, USA}
+%\affil[2]{ADDRESS}
 
 %% The [] brackets identify the author to the corresponding affiliation, 1, 2, 3, etc. should be inserted.
 
@@ -67,6 +67,7 @@ TEXT
 
 
 \introduction  %% \introduction[modified heading if necessary]
+CURRENTLY TEXT HAS BEEN COPY-PASTED FROM DOE PROPOSAL - NEEDS RE-ORDERING ETC.
 \begin{itemize}
 \item topographic input data in models:
 \begin{itemize}
@@ -82,8 +83,24 @@ TEXT
 \item Should we mention dynamic topography in the CESM (Jeremy Fyke, LANL).
 \end{itemize}
 
+Accurate representation of the impact of orography on atmospheric flow is crucial for Earth system modeling (ESM).  For example, on the regional scale the hydrological cycle is closely linked to topography and, on the planetary scale, waves associated with the mid-latitude jets are very susceptible to the effective drag caused by mountains \citep[e.g., ][]{LM1997QJRMS}. Atmospheric blocking producing heat waves and droughts as well as atmospheric rivers are closely related to topographic forcing. Despite the fact that surface elevation is known globally to within a meter (or less), its representation in numerical models remains a challenge.
+
+
+%As global ESM resolutions increase toward the hydrostatic limit, we hypothesize that a major limiting factor{\footnote{together with the representation of moist processes}} in obtaining better results is the representation of topography both on resolved (dynamical core) and sub-grid scale (parameterizations).
+%The interaction between orography and dynamics in numerical models can be divided into four categories:
+%\begin{itemize}
+%\item Orographic model input-data.
+%\item Resolved scale representation of orography in the dynamical core.
+%\item Representation of sub-grid processes: e.g. unresolved gravity waves, low-level jet blocking, and turbulence forced by orography that result in a mean drag on the resolved-scale flow.
+%\item Coupling parameterizations and dynamical core.
+%\end{itemize}
+In this paper we present a versatile software package for generating oropgrahic model input data. ....
 
 \section{Method}
+\subsection{`Raw' elevation data}
+The `raw' elevation data is usually from a digital elevation model (DEM) such as the GTOPO30; a 30 arc second global dataset from the United States Geological Survey \citep[USGS; ][]{USGS} defined on an approximately 1km regular latitude-longitude grid. Several newer, more accurate, and locally higher resolution elevation datasets are available such as GLOBE \citep{GLOBE} and the NASA Shuttle Radar Topographic Mission (SRTM) DEM data \citep{SRTM}. The SRTM data, however, is only near-global (up to 60$^\circ$ North and South).% Currently the CESM uses the GTOPO30 dataset. The `raw' elevation data of choice is used to compute surface geopotential $\Phi_s$ for the dynamical core and sub-grid scale variance for parameterizations of orographic effects such as gravity wave drag and turbulent mountain stress.
+
+
 \subsection{Continuous: separation of scales}
 The separation of scales is, in continuous space, conveniently introduced using spherical harmonics. Assume that elevation (above sea level) is a smooth continuous function in which case it can be represented by a convergent expansion of spherical harmonic functions of the form
 %
@@ -121,7 +138,7 @@ The separation of scales is done through the use of a quasi-isotropic gnonomic c
 \begin{figure*}[t]
 \vspace*{2mm}
 \begin{center}
-\includegraphics[width=12cm]{fig/spheres.eps}
+\includegraphics[width=12cm]{fig/schematic}
 \end{center}
   \caption{A schematic showing the regridding procedure.}\label{fig:schematic}
 \end{figure*}
@@ -197,7 +214,7 @@ Var^{(tms)}_i=\frac{1}{\Delta A_i}\sum_{j\in {\mathbb{S}}_i} \left( \overline{h}
 TODO: show a Figure illustrating the amount of smoothing performed by the binning!
 %
 \subsubsection{Step 2: cubed-sphere grid to target grid ($A\rightarrow \Omega$)}
-The cell averaged values of elevation and sub-grid-scale variances ($Var^{(tms)}$ and $Var^{(gwd)}$) on the target grid are computed by rigorously remapping the variables from the cubed-sphere grid to the target grid.  The remapping is performed using CSLAM (Conservative Semi-LAgrangian Multi-tracer transport scheme) technology \citep{LNU2010JCP} that has the option for performing higher-order remapping. It s possible to use large parts of the CSLAM technology since the source grid is a gnomonic cubed-sphere grid hence instead of remapping between the gnomonic cubed-sphere grid and a deformed Lagrangian grid, as done in CSLAM transport, the remapping is from the gnomonic cubed-sphere grid to any target grid constructed from great-circle arcs (the target grid `plays the role' of the Lagrangian grid). However, a couple of modifications where made to the CSLAM search algorithm. First of all, the target grid cells can have an arbitrary number of vertices whereas the CSLAM transport search algorithm assumes that the target grid consists of quadrilaterals and the number of overlap areas are determined by the deformation of the transporting velocity field. In the case of the remapping needed in this application the target grid consists of polygons with any number of vertices and the search is not constrained by the physical relation between regular and deformed upstream quadrilaterals. Secondly, the CSLAM search algorithm for transport assumes that the target grid cells are convex which is not necessarily the case for topography target grids. The CSLAM search algorithm has been modified to support non-convex cells that are, for example, encountered in variables resolution CAM-SE (see, e.g., Fig.\ref{fig:nonconvex}); essentially that means that any target grid cell may cross a gnonomic isoline (source grid line) more than twice as is the case for transport.
+The cell averaged values of elevation and sub-grid-scale variances ($Var^{(tms)}$ and $Var^{(gwd)}$) on the target grid are computed by rigorously remapping the variables from the cubed-sphere grid to the target grid.  The remapping is performed using CSLAM (Conservative Semi-LAgrangian Multi-tracer transport scheme) technology \citep{LNU2010JCP} that has the option for performing higher-order remapping. It s possible to use large parts of the CSLAM technology since the source grid is a gnomonic cubed-sphere grid hence instead of remapping between the gnomonic cubed-sphere grid and a deformed Lagrangian grid, as done in CSLAM transport, the remapping is from the gnomonic cubed-sphere grid to any target grid constructed from great-circle arcs (the target grid `plays the role' of the Lagrangian grid). However, a couple of modifications where made to the CSLAM search algorithm. First of all, the target grid cells can have an arbitrary number of vertices whereas the CSLAM transport search algorithm assumes that the target grid consists of quadrilaterals and the number of overlap areas are determined by the deformation of the transporting velocity field. In the case of the remapping needed in this application the target grid consists of polygons with any number of vertices and the search is not constrained by the physical relation between regular and deformed upstream quadrilaterals. Secondly, the CSLAM search algorithm for transport assumes that the target grid cells are convex which is not necessarily the case for topography target grids. The CSLAM search algorithm has been modified to support non-convex cells that are, for example, encountered in variables resolution CAM-SE; essentially that means that any target grid cell may cross a gnonomic isoline (source grid line) more than twice as is the case for transport.
 %\begin{figure}[t]
 %\center\includegraphics[width=15pc,angle=0]{fig/non-convex-cell/1.pdf}\\
 %  \caption{Non-convex cell from variable resolution CAM-SE.}\label{fig:nonconvex}
@@ -227,9 +244,55 @@ respectively. The variance of the cubed-sphere data $\overline{h}^{(cube)}$ with
   \caption{Surface geopotential $\Phi_s$ (upper left), $SGH$ (upper right), $SGH30$ (lower left) and $LANDFRAC$ (lower right) for CAM-SE NE30NP4 resolution. The data is plotted on the native grid.}\label{fig:topo-vars}
 \end{figure*}
 
+
 TEXT
 
-\subsection{HEADING}
+\subsection{Sample topography smoothing experiments with CAM-SE}
+HOMME \citep[High-Order Method Modeling Environment; ][]{HOMME,DetAl2005IJHPCA}\\
+
+When performing a spectral analysis of the raw elevation data, it is clear that Earth's topography decreases quite slowly with increasing wave number \citet[see, e.g., ][]{B1993GRL}. Consequently, there will always be a non-negligible spectral component of orography present near the grid scale at current and any foreseeable model resolution. It is common practice not to force the highest wave numbers directly in the model to alleviate obvious spurious noise \citep[e.g.][]{NSM1994JC,LH1997MWR}. Hence the raw topographic data is filtered to remove the highest wave numbers. There seem to be no standardized procedure, for example a test case suite, to objectively select level of smoothing and filtering method. 
+
+
+\begin{figure}[t]
+\vspace*{2mm}
+\begin{center}
+\includegraphics[width=8.3cm]{fig/topo-smoothing-height}
+\end{center}
+  \caption{Surface elevation in kilometers for a cross section along latitude $30^\circ$S (through Andes mountain range) for different representations of surface elevation. Labels `4x', `8x', '16x' and `32x', refer to different levels of smoothing, more precisely, four, eight, sixteen and thirtytwo applications of a `Laplacian' smoothing operator in CAM-SE, respectively. Label `FV $0.9^\circ \times 1.25^\circ$' refers to the topography used in CAM-FV. `0x' is the unsmoothed topography on an approximately $1^\circ$ grid.}\label{fig:topo-smoothing-height}
+\end{figure}
+\begin{figure*}[t]
+\vspace*{2mm}
+\begin{center}
+\includegraphics[width=12cm]{fig/topo-smoothing-experiments.pdf}
+\end{center}
+  \caption{Diagnostics for 30 year AMIP simulations with CAM5.2. Upper, middle and lower group of plots are  model level 16 vertical velocity, total precipitation rate and mean sea level pressure differences, respectively, Except for the two right-most plots on the second row of each group of plots, the diagnostics are for CAM-SE with different amounts of smoothing of $\Phi_s$ and different levels of divergence damping. The amount of smoothing follows the same notation as Fig. \ref{fig:topo-smoothing-height} (right) and $1.0 x div$, $2.5 x div$, $5.0 x div$ refers to increasing divergence damping by a factor 1,0, 2.5, and 5.0, respectively. The second right-most plot on each group of plots (labeled FV) show results for CAM-FV. Lower right plot in the second and third group of plots show TRMM observations and NCEP reanalysis data, respectively.}\label{fig:topo-smoothing-exp}
+\end{figure*}
+
+\begin{figure*}[t]
+\vspace*{2mm}
+\begin{center}
+\includegraphics[width=12cm]{fig/TKE-fig}
+\end{center}
+  \caption{(left) Total kinetic energy spectrum for the velocity field at 200hPa as a function of spherical wavenumber $k$ for CAM-FV and different configurations of CAM-SE. The labeling for the CAM-SE configurations is the same as in Figure \ref{fig:topo-smoothing-exp}. The solid-straight black line indicates the $k^{-3}$ reference slope \citep{NG1985JAS}. The middle and right plots show the kinetic energy partitioned into divergent and rotational modes, respectively. The spectra have been computed using daily instantaneous wind and surface pressure data for a 2 month period.}\label{fig:tke}
+\end{figure*}
+
+Modeling groups, with the exception of the UK Met Office \citep{WBCJ2003QJRMS}, rarely publish their smoothing procedures and criteria for choosing one level of smoothing over another. It is likely that qualitative methods are used such as the elimination of visible noise in, e.g. vertical velocity, near orography rather than quantitative diagnostics. The amount of smoothing necessary to remove spurious noise in, e.g. vertical velocity, depends on the amount of inherent or explicit numerical diffusion in the dynamical core \citep[e.g., ][]{L2011IJHPC}. In the NCAR-DOE CESM (Community Earth System Model) CAM-FV \citep[Community Atmosphere Model - Finite-Volume; ][]{L2004MWR} the highest wave-numbers are removed by mapping $\Phi_s$ (surface geopotential) to a regular latitude-longitude grid that is half the resolution of the desired model resolution, and then mapped back to the model grid by one-dimensional remaps along latitudes and longitudes, respectively, using the PPM (Piecewise Parabolic Method) with monotone filtering. In CAM-SE \citep[Community Atmosphere Model - Spectral-Elements;][]{DetAl2012IJHPCA,CAM5} the surface geopotential is smoothed by multiple applications of the CAM-SE Laplace operator combined with a bounds preserving limiter. Figure \ref{fig:topo-smoothing-height} shows different levels of smoothing of surface height for CAM-SE and for comparison CAM-FV. It can clearly be seen that there are large differences between the height of the mountains used in the dynamical core. Figure \ref{fig:topo-smoothing-exp} shows results from AMIP simulations with CAM-SE using different levels of $\Phi_s$ smoothing and numerical diffusion of divergent modes. Spurious noise near steep orography is very apparent for certain model configurations and affects important hydrological fields such as precipitation; even surface pressure varies significantly among the model configurations (not shown) which, in turn, affects sea ice extent and other important climate variables. 
+
+While it is necessary to smooth topography to remove spurious grid-scale noise, it introduces two problems. Filtering will typically raise ocean points near step orography to non-zero elevation. Perhaps the most striking example is the Andes mountain range that extends one or two grid cells into the Pacific after the filtering operation (see, e.g., Figure \ref{fig:oro-spectra} right). Ocean and land points are treated separately in weather/climate models so raised sea-points may potentially be problematic. Secondly, the filtering will generally reduce the height of local orographic maxima and given the importance of barrier heights in atmospheric dynamics, this could be a problem for the global angular momentum budget and could fundamentally change the flow. 
+
+To capture the barrier effect (blocking) that is sub-grid scale with respect to the smoothed orography, one may use {\em{envelope orography}} that adjusts the surface height with sub-grid scale orographic variance \citep{WTS1983QJRMS}. Loosely speaking, the peak heights are raised. A similar approach, but implemented as variational filtering, is taken in \cite{RTS2006QJRMS}; this method also imposes additional constraints such as enforcing zero elevation over ocean masks.
+
+ 
+As mentioned above it is not straight forward to determine how to smooth orography. One approach is to try different filtering methods in the full model and evaluate the results in weather forecasts or longer climate simulations \citep{NSM1994JC,B1995QJRMS,H1996JC}. While this approach is certainly valuable, clearly the size of the Gibbs oscillations in global spectral models is reduced by smoothing orography, it does not take into account the interaction between the resolved-scale flow (dynamical core) and parameterizations of sub-grid scale processes (e.g., gravity wave drag, turbulent mountain stress). This interaction can be difficult to predict and commonly the sub-grid scale parameterization have been tuned over a number of years with the `default' smoothed surface elevation. Hence, this methodology runs the risk of deeming one smoothing less accurate than another due to lack of optimum tuning (and/or complexity) of the parameterizations.
+
+Another approach is to use idealized simulation with no parameterizations to determine what scales are adequately resolved and which are poorly resolved. \cite{DB2001QJRMS} kept the physical scale of an idealized two-dimensional and three-dimensional isolated hill fixed and observed how the coarser resolution results differ from the high-resolution simulation. This can then provide guide-lines on how to smooth orography in the full model. Similar idealized (shallow water) experiments where used in \cite{RTS2006QJRMS} to optimally smooth orography. While these idealized tests provide a `cleaner' approach to smoothing terrain, they do not consider the coupling with sub-grid scale processes.
+
+
+
+
+
+
+
 TEXT
 
 \subsubsection{HEADING}
