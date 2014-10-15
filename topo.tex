@@ -24,12 +24,12 @@
 
 \linenumbers
 
-\title{NCAR Model Topography Generation Software}
+\title{NCAR Global Model Topography Generation Software for Unstructured Grids}
 
 
-\author[1]{Julio Bacmeister}
-\author[1]{Peter Hjort Lauritzen}
-\author[1]{Patrick Callaghan}
+\author[1]{Julio T. Bacmeister}
+\author[1]{Peter H. Lauritzen}
+\author[1]{Patrick F. Callaghan}
 
 \affil[1]{National Center for Atmospheric Research, 1850 Table Mesa Drive, Boulder, Colorado, USA}
 %\affil[2]{ADDRESS}
@@ -234,6 +234,28 @@ respectively. The variance of the cubed-sphere data $\overline{h}^{(cube)}$ with
 \overline{Var}^{(sgh)}_k=\frac{1}{\Delta \Omega_k}\sum_{\ell\in {\mathbb{L}}_k}\left( \overline{h}^{(targ)}_k-\overline{h}^{(cube)}_\ell\right)^2\, \Delta \Omega_{k\ell},
 \end{equation}
 
+\subsection{Smoothing of $\Phi_s$}
+When performing a spectral analysis of the raw elevation data, it is clear that Earth's topography decreases quite slowly with increasing wave number \citet[see, e.g., ][]{B1993GRL}. Consequently, there will always be a non-negligible spectral component of orography present near the grid scale at current and any foreseeable model resolution. It is common practice not to force the highest wave numbers directly in the model to alleviate obvious spurious noise \citep[e.g.][]{NSM1994JC,LH1997MWR}. Hence the raw topographic data is filtered to remove the highest wave numbers. There seem to be no standardized procedure, for example a test case suite, to objectively select level of smoothing and filtering method. 
+
+Modeling groups, with the exception of the UK Met Office \citep{WBCJ2003QJRMS}, rarely publish their smoothing procedures and criteria for choosing one level of smoothing over another. It is likely that qualitative methods are used such as the elimination of visible noise in, e.g. vertical velocity, near orography rather than quantitative diagnostics. The amount of smoothing necessary to remove spurious noise in, e.g. vertical velocity, depends on the amount of inherent or explicit numerical diffusion in the dynamical core \citep[e.g., ][]{L2011IJHPC}. In the NCAR-DOE CESM (Community Earth System Model) CAM-FV \citep[Community Atmosphere Model - Finite-Volume; ][]{L2004MWR} the highest wave-numbers are removed by mapping $\Phi_s$ (surface geopotential) to a regular latitude-longitude grid that is half the resolution of the desired model resolution, and then mapped back to the model grid by one-dimensional remaps along latitudes and longitudes, respectively, using the PPM (Piecewise Parabolic Method) with monotone filtering. In CAM-SE \citep[Community Atmosphere Model - Spectral-Elements;][]{DetAl2012IJHPCA,CAM5} the surface geopotential is smoothed by multiple applications of the CAM-SE Laplace operator combined with a bounds preserving limiter. Figure \ref{fig:topo-smoothing-height} shows different levels of smoothing of surface height for CAM-SE and for comparison CAM-FV. It can clearly be seen that there are large differences between the height of the mountains used in the dynamical core. 
+
+While it is necessary to smooth topography to remove spurious grid-scale noise, it introduces two problems. Filtering will typically raise ocean points near step orography to non-zero elevation. Perhaps the most striking example is the Andes mountain range that extends one or two grid cells into the Pacific after the filtering operation (see, e.g., Figure \ref{fig:oro-spectra} right). Ocean and land points are treated separately in weather/climate models so raised sea-points may potentially be problematic. Secondly, the filtering will generally reduce the height of local orographic maxima and given the importance of barrier heights in atmospheric dynamics, this could be a problem for the global angular momentum budget and could fundamentally change the flow. 
+
+To capture the barrier effect (blocking) that is sub-grid scale with respect to the smoothed orography, one may use {\em{envelope orography}} that adjusts the surface height with sub-grid scale orographic variance \citep{WTS1983QJRMS}. Loosely speaking, the peak heights are raised. A similar approach, but implemented as variational filtering, is taken in \cite{RTS2006QJRMS}; this method also imposes additional constraints such as enforcing zero elevation over ocean masks.
+
+ 
+As mentioned above it is not straight forward to determine how to smooth orography. One approach is to try different filtering methods in the full model and evaluate the results in weather forecasts or longer climate simulations \citep{NSM1994JC,B1995QJRMS,H1996JC}. While this approach is certainly valuable, clearly the size of the Gibbs oscillations in global spectral models is reduced by smoothing orography, it does not take into account the interaction between the resolved-scale flow (dynamical core) and parameterizations of sub-grid scale processes (e.g., gravity wave drag, turbulent mountain stress). This interaction can be difficult to predict and commonly the sub-grid scale parameterization have been tuned over a number of years with the `default' smoothed surface elevation. Hence, this methodology runs the risk of deeming one smoothing less accurate than another due to lack of optimum tuning (and/or complexity) of the parameterizations.
+
+Another approach is to use idealized simulation with no parameterizations to determine what scales are adequately resolved and which are poorly resolved. \cite{DB2001QJRMS} kept the physical scale of an idealized two-dimensional and three-dimensional isolated hill fixed and observed how the coarser resolution results differ from the high-resolution simulation. This can then provide guide-lines on how to smooth orography in the full model. Similar idealized (shallow water) experiments where used in \cite{RTS2006QJRMS} to optimally smooth orography. While these idealized tests provide a `cleaner' approach to smoothing terrain, they do not consider the coupling with sub-grid scale processes.
+
+Describe internal smoothing algorithm ,,,,
+
+\subsubsection{Algorithm for determining the dominant orientation of sub-grid orography}\label{sec:sub-orient}
+Our algorithm for determining the dominant orientation of sub-grid orography is relatively straightforward.  We begin with 3 km topography on the intermediate cubed-sphere grid and compute an extension of each panel on the cubed-sphere via high-order interpolation so that each panel can numerically be treated essentially as a Cartesian computational domain. An outer/model scale ($L$) is selected.  A high-pass filter is optionally applied to remove larger scales.  We then take a square of orography $h(x,y)$ with dimension $L$ and rotate it through 16 test angles $\xi_i$.  `Padding' is used to avoid corner effects.  In each test rotation a `Y' average is taken to generate a ridge profile $h_i(x)$ at angle $\xi_i$.  The ratio of the variance of $h_i$ to the total 2D variance in $h(x,y)$ is computed.  The angle for which this ratio is greatest is designated as the dominant topographic orientation for the sub-grid topography in the $LxL$ domain of $h(x,y)$.  This is done at regular intervals separated by $L$ over the entire globe.  The angle and other topographic parameters can then be mapped from the cubed sphere grid with resolution $L$ to arbitrary model grids using the new topography software already available in CAM.  Preliminary results from our algorithm are presented in Figure \ref{fig:dsgso}.
+\begin{figure}[tb]
+\center\includegraphics[width=20pc,angle=0]{fig/dominant-sub-grid-oro.pdf}
+  \caption{Topography of southeast Asia (color) and diagnosed ridges (black symbols). An outer scale of 50 km is used. Only ridges explaining 50\% or more of total 2D variance and possessing maximum vertical displacement of more than 500 m are shown.  Long axes of symbols show ridge crests, short appendages indicate direction of greater descent.}\label{fig:dsgso}
+\end{figure} 
 
 \section{Results}
 \begin{figure*}[t]
@@ -250,7 +272,7 @@ TEXT
 \subsection{Sample topography smoothing experiments with CAM-SE}
 HOMME \citep[High-Order Method Modeling Environment; ][]{HOMME,DetAl2005IJHPCA}\\
 
-When performing a spectral analysis of the raw elevation data, it is clear that Earth's topography decreases quite slowly with increasing wave number \citet[see, e.g., ][]{B1993GRL}. Consequently, there will always be a non-negligible spectral component of orography present near the grid scale at current and any foreseeable model resolution. It is common practice not to force the highest wave numbers directly in the model to alleviate obvious spurious noise \citep[e.g.][]{NSM1994JC,LH1997MWR}. Hence the raw topographic data is filtered to remove the highest wave numbers. There seem to be no standardized procedure, for example a test case suite, to objectively select level of smoothing and filtering method. 
+
 
 
 \begin{figure}[t]
@@ -276,7 +298,10 @@ When performing a spectral analysis of the raw elevation data, it is clear that 
   \caption{(left) Total kinetic energy spectrum for the velocity field at 200hPa as a function of spherical wavenumber $k$ for CAM-FV and different configurations of CAM-SE. The labeling for the CAM-SE configurations is the same as in Figure \ref{fig:topo-smoothing-exp}. The solid-straight black line indicates the $k^{-3}$ reference slope \citep{NG1985JAS}. The middle and right plots show the kinetic energy partitioned into divergent and rotational modes, respectively. The spectra have been computed using daily instantaneous wind and surface pressure data for a 2 month period.}\label{fig:tke}
 \end{figure*}
 
-Modeling groups, with the exception of the UK Met Office \citep{WBCJ2003QJRMS}, rarely publish their smoothing procedures and criteria for choosing one level of smoothing over another. It is likely that qualitative methods are used such as the elimination of visible noise in, e.g. vertical velocity, near orography rather than quantitative diagnostics. The amount of smoothing necessary to remove spurious noise in, e.g. vertical velocity, depends on the amount of inherent or explicit numerical diffusion in the dynamical core \citep[e.g., ][]{L2011IJHPC}. In the NCAR-DOE CESM (Community Earth System Model) CAM-FV \citep[Community Atmosphere Model - Finite-Volume; ][]{L2004MWR} the highest wave-numbers are removed by mapping $\Phi_s$ (surface geopotential) to a regular latitude-longitude grid that is half the resolution of the desired model resolution, and then mapped back to the model grid by one-dimensional remaps along latitudes and longitudes, respectively, using the PPM (Piecewise Parabolic Method) with monotone filtering. In CAM-SE \citep[Community Atmosphere Model - Spectral-Elements;][]{DetAl2012IJHPCA,CAM5} the surface geopotential is smoothed by multiple applications of the CAM-SE Laplace operator combined with a bounds preserving limiter. Figure \ref{fig:topo-smoothing-height} shows different levels of smoothing of surface height for CAM-SE and for comparison CAM-FV. It can clearly be seen that there are large differences between the height of the mountains used in the dynamical core. Figure \ref{fig:topo-smoothing-exp} shows results from AMIP simulations with CAM-SE using different levels of $\Phi_s$ smoothing and numerical diffusion of divergent modes. Spurious noise near steep orography is very apparent for certain model configurations and affects important hydrological fields such as precipitation; even surface pressure varies significantly among the model configurations (not shown) which, in turn, affects sea ice extent and other important climate variables. 
+
+
+
+Figure \ref{fig:topo-smoothing-exp} shows results from AMIP simulations with CAM-SE using different levels of $\Phi_s$ smoothing and numerical diffusion of divergent modes. Spurious noise near steep orography is very apparent for certain model configurations and affects important hydrological fields such as precipitation; even surface pressure varies significantly among the model configurations (not shown) which, in turn, affects sea ice extent and other important climate variables. 
 
 While it is necessary to smooth topography to remove spurious grid-scale noise, it introduces two problems. Filtering will typically raise ocean points near step orography to non-zero elevation. Perhaps the most striking example is the Andes mountain range that extends one or two grid cells into the Pacific after the filtering operation (see, e.g., Figure \ref{fig:oro-spectra} right). Ocean and land points are treated separately in weather/climate models so raised sea-points may potentially be problematic. Secondly, the filtering will generally reduce the height of local orographic maxima and given the importance of barrier heights in atmospheric dynamics, this could be a problem for the global angular momentum budget and could fundamentally change the flow. 
 
