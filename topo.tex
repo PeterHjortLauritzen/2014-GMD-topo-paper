@@ -26,9 +26,8 @@
 
 \title{NCAR Global Model Topography Generation Software for Unstructured Grids}
 
-
-\author[1]{Julio T. Bacmeister}
 \author[1]{Peter H. Lauritzen}
+\author[1]{Julio T. Bacmeister}
 \author[1]{Patrick F. Callaghan}
 
 \affil[1]{National Center for Atmospheric Research, 1850 Table Mesa Drive, Boulder, Colorado, USA}
@@ -198,7 +197,7 @@ and $\Delta A_i$ denotes the spherical area. A formula for the spherical area $\
 %
 %
 \subsubsection{Step 1: raw elevation data to intermediate cubed-sphere grid ($\Lambda \rightarrow A$)}\label{sec:step1}
-The `raw' elevation data is usually from a digital elevation model (DEM) such as the GTOPO30 30 arc second global dataset from the United States Geological Survey \citep[USGS][]{USGS} defined on an approximately 1km regular latitude-longitude grid. Several newer and higher resolution elevation datasets are available such as the NASA Shuttle Radar Topographic Mission (SRTM) DEM data \citep{SRTM}. The SRTM data, however, is only near-global (up to 60$^\circ$ North and South). In the remainder of this paper we assume that the raw elevation data is the USGS 30 arc second data.
+The `raw' elevation data currently used is the GTOPO30 30 arc second global dataset from the United States Geological Survey \citep[USGS][]{USGS} defined on an approximately 1km regular latitude-longitude grid.
 
 The center of the regular latitude-longitude grid cells are denoted $(\lambda_{ilon},\theta_{jlat})$, $ilon=1,..., nlon$, $jlat=1, ..., nlat$. For the USGS dataset used here $nlon=43200$ and $nlat=21600$. As for the cubed-sphere we use one index $j$ to reference the grid cells
 \begin{equation}
