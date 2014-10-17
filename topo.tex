@@ -67,24 +67,43 @@ TEXT
 
 
 \introduction  %% \introduction[modified heading if necessary]
-CURRENTLY TEXT HAS BEEN COPY-PASTED FROM DOE PROPOSAL - NEEDS RE-ORDERING ETC.
-\begin{itemize}
-\item topographic input data in models:
-\begin{itemize}
-\item resolved-scale elevation $\Phi_s$ which usually needs to be smoothed
-\item $SGH$: gravity wave drag
-\item anisotropic gravity wave drag (dominant sub-grid-scale orientation)
-\item $SGH30$: turbulent mountain stress
-\item $LANDFRAC$
-\end{itemize}
-\end{itemize}
+Accurate representation of the impact of orography on atmospheric flow is crucial for Earth system modeling.  For example, on the regional scale the hydrological cycle is closely linked to topography and, on the planetary scale, waves associated with the mid-latitude jets are very susceptible to the effective drag caused by mountains \citep[e.g., ][]{LM1997QJRMS}. Atmospheric blocking producing heat waves and droughts as well as atmospheric rivers are closely related to topographic forcing. Despite the fact that surface elevation is known globally to within a meter (or less), its representation in numerical models remains a challenge.
 
+The interaction between orography and dynamics in numerical models is usually split into to components:
 \begin{itemize}
-\item Should we mention dynamic topography in the CESM (Jeremy Fyke, LANL).
+\item Resolved scale representation of orography in the dynamical core.
+\item Representation of sub-grid processes: e.g. unresolved gravity waves, low-level jet blocking, and turbulence forced by orography that result in a mean drag on the resolved-scale flow.
 \end{itemize}
+These two components are discussed in sub-sections below as well as the oropgrahic input data typically needed by numerical models.
+\subsection{Resolved-scale orography: Surface geopotential $\Phi_s$}
+The resolved scale component is basically the surface geopotential, $\Phi_s$, which is related to the mean elevation in each grid box. The `raw' elevation data is usually from a digital elevation model (DEM) such as the GTOPO30; a 30 arc second global dataset from the United States Geological Survey \citep[USGS; ][]{USGS} defined on an approximately 1km regular latitude-longitude grid. Several newer, more accurate, and locally higher resolution elevation datasets are available such as GLOBE \citep{GLOBE} and the NASA Shuttle Radar Topographic Mission (SRTM) DEM data \citep{SRTM}. The SRTM data, however, is only near-global (up to 60$^\circ$ North and South).
+% Currently the CESM uses the GTOPO30 dataset. The `raw' elevation data of choice is used to compute surface geopotential $\Phi_s$ for the dynamical core and sub-grid scale variance for parameterizations of orographic effects such as gravity wave drag and turbulent mountain stress.
 
-Accurate representation of the impact of orography on atmospheric flow is crucial for Earth system modeling (ESM).  For example, on the regional scale the hydrological cycle is closely linked to topography and, on the planetary scale, waves associated with the mid-latitude jets are very susceptible to the effective drag caused by mountains \citep[e.g., ][]{LM1997QJRMS}. Atmospheric blocking producing heat waves and droughts as well as atmospheric rivers are closely related to topographic forcing. Despite the fact that surface elevation is known globally to within a meter (or less), its representation in numerical models remains a challenge.
+For models based on a terrain-following coordinate the specification of $\Phi_s$ determines the location of vertical levels in that the levels closer to the surface has gradients proportional to the surface elevation. Hence the terrain-following coordinates are not perpendicular to the direction of the stratification (the radial direction) so errors can arise when calculations are needed along stratified layers. For example, the pressure-gradient force (PGF) in terrain-following coordinates splits into two terms; one that is proportional to the geopotential gradient and one that is proportional to the pressure gradient. These terms are of similar magnitude but opposite sign. For a perfectly balanced flow these terms should exactly cancel. Failure to preserve this balance can produce large spurious vertical velocities. This problem, referred to as the PGF error/problem, has significant implications for global atmospheric modeling, with efforts to tackle this problem stretching back as far as the late 1970s \citep{ZIJ1977BzPdA, DTMZIJ1986MAP}.  As global models reach finer spatial scales, the pressure gradient problem leads to an increasingly polluted dynamical solution near steep topography since an increase in horizontal resolution, in general, steepen slopes. 
+\subsection{Sub-grid-scale orography: }
+On the sub-grid scale there are many processes associated with topography such as sub-grid blocking, flow splitting, sheltering effects, generation of turbulence by roughness and gravity wave breaking \citep{B1990BAMS}. Only a brief overview of common parameterizations is given here.
 
+Turbulent drag may be parameterized either through `effective roughness lengths' \citep{FP1972WJRMS} or  specified with an explicit orographic stress profile (introduced by \citet{WBH2001QJRMS} and used by \citet{BBW2004QJRMS}). These parameterizations are referred to as turbulent mountain stress (TMS); a form drag exerted by sub-grid scale orography \citep[][]{RSG2010JAS}. To better capture the blocking of low-level flow, blocking parameterizations may be used \citep{LM1997QJRMS} and/or envelope orography. The ECMWF numerical weather prediction model incorporated a low-level blocking scheme nearly two-decades ago.  Similar schemes have since been widely adopted by other forecasting centers due to their clearly beneficial impacts on model performance \citep[e.g.][]{WBCJ2003QJR,ZRLC2003AO,KD2005QJRMS}. \citet{SM2000QJRMS} reported positive impact on global climate simulations from introducing a low-level blocking parameterization in the Canadian Center for Climate Modeling and Analysis GCM.  
+
+Vertically propagating gravity waves may break and slow down large scale flow. Parameterizations for that are referred to as gravity wave drag \citep[GWD; ][]{KEC2003AO} [{\color{red}{Julio: earlier reference?}}]. Many of these schemes also incorporate the effects of topographic anisotropy, i.e., the existence of ridges with dominant orientations, in determining  the direction and magnitude of the drag exerted by sub-grid orography.  The importance of anisotropy in quantifying orographic effects has also been recognized for some time \citep[e.g.,][]{BP1990ECMWF,B1993JAS}.
+
+%In the CESM two topographic processes are parameterized: gravity wave drag (GWD) representing the momentum deposition by gravity wave breaking (this GWD parameterization does not take into account sub-grid scale orientation of orography), and TMS representing the orographically-based enhancement to the roughness length scale \citep[][]{RSG2010JAS}. The CESM does not have a parameterization for blocking. 
+
+\subsection{Orograhic model input data}
+The data needed by the atmopsheric model is, first of all, the surface geopotential on the models grid: $\Phi_s$. The topographic input data for GWD and TMS are $SGH$ and $SGH30$, respectively. $SGH30$ is the variance of $\Phi_s$ on horizontal scales smaller than approximate 3-5 km and $SGH$ is the variance of topography on scales larger than 3-5km and up to the model grid scale. The separation scale is, loosely speaking, determined from linear theory that predict that gravity waves propagate in the vertical when the scale of a mountain is approximately larger than 3-5km \citep[e.g.,][]{Durran,BBW2004QJRMS}. How $SGH$ and $SGH30$ are computed has significant impacts on the simulated climate (not shown) [{\color{red}{we could consider showing some results - especially since CAM5.4/5 is using the new topo}}]].
+
+%Figure \ref{fig:CAM-FV-T} shows the effect on temperature when changing the sub-grid scale variance of orography ($SGH$ and $SGH30$) where the separation of scales is done through an intermediate cubed-sphere grid (referred to as {\em{new}}) and regular latitude-longitude (referred to as {\em{default}} as it is the standard configuration used for CAM-FV) grid, respectively. The former provides a more uniform separation of scales than the latter. The new $SGH$ and $SGH30$ variables reduce the long-standing cold-pole bias in the model by as much as 5K. Needless to say, these sub-grid scale variables have a significant impact on the simulated climate.
+%\begin{figure}[t]
+%\center\includegraphics[width=35pc,angle=0]{fig/CAM-FV-T.pdf}
+%  \caption{Time-mean zonal-mean temperature ($T$) differences as a function of height and latitude between CAM-FV using (a) new consistent and (b) default sub-grid scale variance of $\Phi_s$, respectively, and NCEP observations. (c) is the difference between configuration (a) and (b).}
+%\label{fig:CAM-FV-T}
+%\end{figure} 
+
+{\color{red}{Julio: please describe input data of ridges ...}}
+
+%The parameterization of orographic effects in CESM has not been carefully re-examined since the incorporation of the \citet{M1987JAS} parameterization in NCAR's CCM2 \citep[Community Climate Model;][]{CCM2}.  As mentioned above, version 5 of CAM includes a TMS parameterization.  This scheme has large (beneficial) impacts on climate simulations in CESM, but it is an {\em{ad hoc}} formulation originally intended as a short term fix to the model's drag formulation.  
+%
+%There are plenty of examples of the influence of terrain roughness on atmospheric flow. A particularly relevant example is given in \citet{JG2011CD}: a regional model (at 20km resolution) was used to model flow in Glacier valleys across the Transantarctic Mountains. The accurate simulation of these flows is important for the Ross Sea climate. It was found that orographic roughness was essential to produce realistic simulations. The high resolution versions of CAM-SE target $1/4^\circ$ horizontal resolutions (or even $1/8^\circ$); hence ESM's are reaching resolutions where, following the above example, Glacier valley flows can be resolved and simulated accurately with appropriate sub-grid scale parameterizations of orography.
 
 %As global ESM resolutions increase toward the hydrostatic limit, we hypothesize that a major limiting factor{\footnote{together with the representation of moist processes}} in obtaining better results is the representation of topography both on resolved (dynamical core) and sub-grid scale (parameterizations).
 %The interaction between orography and dynamics in numerical models can be divided into four categories:
@@ -97,8 +116,7 @@ Accurate representation of the impact of orography on atmospheric flow is crucia
 In this paper we present a versatile software package for generating oropgrahic model input data. ....
 
 \section{Method}
-\subsection{`Raw' elevation data}
-The `raw' elevation data is usually from a digital elevation model (DEM) such as the GTOPO30; a 30 arc second global dataset from the United States Geological Survey \citep[USGS; ][]{USGS} defined on an approximately 1km regular latitude-longitude grid. Several newer, more accurate, and locally higher resolution elevation datasets are available such as GLOBE \citep{GLOBE} and the NASA Shuttle Radar Topographic Mission (SRTM) DEM data \citep{SRTM}. The SRTM data, however, is only near-global (up to 60$^\circ$ North and South).% Currently the CESM uses the GTOPO30 dataset. The `raw' elevation data of choice is used to compute surface geopotential $\Phi_s$ for the dynamical core and sub-grid scale variance for parameterizations of orographic effects such as gravity wave drag and turbulent mountain stress.
+
 
 
 \subsection{Continuous: separation of scales}
