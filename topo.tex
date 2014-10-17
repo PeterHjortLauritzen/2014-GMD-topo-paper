@@ -80,7 +80,10 @@ The resolved scale component is basically the surface geopotential $\Phi_s$, or,
 % Currently the CESM uses the GTOPO30 dataset. The `raw' elevation data of choice is used to compute surface geopotential $\Phi_s$ for the dynamical core and sub-grid scale variance for parameterizations of topographic effects such as gravity wave drag and turbulent mountain stress.
 
 For models based on a terrain-following coordinate the specification of $\Phi_s$ determines the location of vertical levels in that the levels closer to the surface has gradients proportional to the surface elevation. Hence the terrain-following coordinates are not perpendicular to the direction of the stratification (the radial direction) so errors can arise when calculations are needed along stratified layers. For example, the pressure-gradient force (PGF) in terrain-following coordinates splits into two terms; one that is proportional to the geopotential gradient and one that is proportional to the pressure gradient. These terms are of similar magnitude but opposite sign. For a perfectly balanced flow these terms should exactly cancel. Failure to preserve this balance can produce large spurious vertical velocities. This problem, referred to as the PGF error/problem, has significant implications for global atmospheric modeling, with efforts to tackle this problem stretching back as far as the late 1970s \citep{ZIJ1977BzPdA, DTMZIJ1986MAP}.  As global models reach finer spatial scales, the pressure gradient problem leads to an increasingly polluted dynamical solution near steep topography since an increase in horizontal resolution, in general, steepen slopes. 
-
+\begin{figure}[tb]
+\center\includegraphics[width=20pc,angle=0]{fig/tke-topo.pdf}
+  \caption{}\label{fig:tke-topo}
+\end{figure} 
 When performing a spectral analysis of the raw elevation data, it is clear that Earth's topography decreases quite slowly with increasing wave number \citep[see, e.g., ][]{B1993GRL}. Consequently, there will always be a non-negligible spectral component of topography present near the grid scale at current and any foreseeable model resolution. It is common practice not to force the highest wave numbers directly in the model to alleviate obvious spurious noise \citep[e.g.][]{NSM1994JC,LH1997MWR}. Hence the raw topographic data is filtered to remove the highest wave numbers. There seem to be no standardized procedure, for example a test case suite, to objectively select level of smoothing and filtering method. 
 
 While it is necessary to smooth topography to remove spurious grid-scale noise, it introduces two problems. Filtering will typically raise ocean points near step topography to non-zero elevation. Perhaps the most striking example is the Andes mountain range that extends one or two grid cells into the Pacific after the filtering operation ({\color{red}{Figure??}}). Ocean and land points are treated separately in weather/climate models so raised sea-points may potentially be problematic. Secondly, the filtering will generally reduce the height of local topographic maxima and given the importance of barrier heights in atmospheric dynamics, this could be a problem for the global angular momentum budget and could fundamentally change the flow. 
@@ -126,7 +129,7 @@ The data needed by the atmopsheric model is, first of all, the surface geopotent
 %\item Representation of sub-grid processes: e.g. unresolved gravity waves, low-level jet blocking, and turbulence forced by topography that result in a mean drag on the resolved-scale flow.
 %\item Coupling parameterizations and dynamical core.
 %\end{itemize}
-In this paper we present a versatile software package for generating oropgrahic model input data that directly supports unstructured grids. In addition to specifying $\Phi_s$ on the model grid a separation of sub-grid scales is needed for GWD and TMS. This separation of scales is done through an intermediate mapping of the raw elevation data to ~3km cubed-sphere grid before mapping fields to the target model grid (Figure \ref{fig:schematic}). This two-step process is described in section \ref{sec:discrete} after a mathematical definition of the separation involved in section \ref{sec:cont}. In section \ref{sec:smoothing} the smoothing of $\Phi_s$ is discussed followed by a description of the algorithm for identifying sub-grid scale ridges (section \ref{sec:sub-orient}).
+In this paper we present a versatile software package for generating oropgrahic model input data that directly supports unstructured grids. In addition to specifying $\Phi_s$ on the model grid a separation of sub-grid scales is needed for GWD and TMS. This separation of scales is done through an intermediate mapping of the raw elevation data to ~3km cubed-sphere grid ($\Lambda \rightarrow A$) before mapping fields to the target model grid ($A \rightarrow \Omega$) as schematically shown on Figure \ref{fig:schematic}. This two-step process is described in section \ref{sec:discrete} after a mathematical definition of the separation involved in section \ref{sec:cont}. In section \ref{sec:smoothing} the smoothing of $\Phi_s$ is discussed followed by a description of the algorithm for identifying sub-grid scale ridges (section \ref{sec:sub-orient}).
 
 \section{Method}
 
@@ -172,7 +175,7 @@ The separation of scales is done through the use of a quasi-isotropic gnonomic c
 \begin{center}
 \includegraphics[width=12cm]{fig/schematic}
 \end{center}
-  \caption{A schematic showing the regridding procedure.}\label{fig:schematic}
+  \caption{A schematic showing the regridding procedure. Red fonts refer to the naming convections for the grids: $\Lambda$ is the `raw' data grid (~1km regular lat-lon grid), $A$ is the intermediate cubed-sphere grid and $\Omega$ is the target grid which may be any unstructured or structured grid. The variable naming convections in the boxes are explained in section \ref{sec:naming-conventions}.}\label{fig:schematic}
 \end{figure*}
 
 Any quasi-uniform spherical grid could, in theory, be used for the separation of scales. For reasons that will become clear we have chosen to use a gnomonic cubed-sphere grid resulting from an  equi-angular gnomonic (central) projection
@@ -307,6 +310,18 @@ Our algorithm for determining the dominant orientation of sub-grid topography is
 \center\includegraphics[width=20pc,angle=0]{fig/dominant-sub-grid-oro.pdf}
   \caption{Topography of southeast Asia (color) and diagnosed ridges (black symbols). An outer scale of 50 km is used. Only ridges explaining 50\% or more of total 2D variance and possessing maximum vertical displacement of more than 500 m are shown.  Long axes of symbols show ridge crests, short appendages indicate direction of greater descent.}\label{fig:dsgso}
 \end{figure} 
+
+\subsection{Naming conventions}\label{sec:naming-conventions}
+The naming conventions for the topographic variables in the NetCDF files is:
+\begin{eqnarray}
+PHIS  &=& g\, {\overline{h}}^{(tgt)}_{\Omega},\\
+SGH   &=& \sqrt{Var^{(gwd)}_\Omega},\\
+SGH30 &=& \sqrt{Var^{(tms)}_\Omega},\\
+LANDFRAC &=& \overline{f}^{(tgt)}_\Omega,
+\end{eqnarray}
+where $g$ is the gravitational constant.
+{\color{red}{is SGH computed on $\Phi_s$ or $h$?}}
+
 
 \section{Results}
 \begin{figure*}[t]
