@@ -66,8 +66,9 @@ TEXT
 
 
 \introduction  %% \introduction[modified heading if necessary]
-{\color{red}{define acronym CAM in introduction}}\\
 Accurate representation of the impact of topography on atmospheric flow is crucial for Earth system modeling.  For example, on the regional scale the hydrological cycle is closely linked to topography and, on the planetary scale, waves associated with the mid-latitude jets are very susceptible to the effective drag caused by mountains \citep[e.g., ][]{LM1997QJRMS}. Atmospheric blocking producing heat waves and droughts as well as atmospheric rivers are closely related to topographic forcing. Despite the fact that surface elevation is known globally to within a meter (or less), its representation in numerical models remains a challenge.
+
+It is the purpose of this paper to document the global model topography generation software for unstructured grids developed at NCAR. In the spirit of documenting model development example simulations illustrating the impacts of topographic smoothing with the NCAR-DOE CESM (Community Earth System Model) CAM \citep[Community Atmosphere Model; ][]{CAM5} SE \cite[Spectral Element; ][]{HOMME,DetAl2005IJHPCA} and CAM-FV \citep[Finite-Volume; ][]{L2004MWR} dynamical core are presented. The optimal smoothing of topography and associated representation and tuning of sub-grid-scale processes is a non-trivial problem, as discussed in the following, and beyond the scope of the example simulations.
 
 The interaction between topography and dynamics in numerical models is usually split into to components:
 \begin{itemize}
@@ -80,17 +81,33 @@ The resolved scale component is basically the surface geopotential $\Phi_s$, or,
 % Currently the CESM uses the GTOPO30 dataset. The `raw' elevation data of choice is used to compute surface geopotential $\Phi_s$ for the dynamical core and sub-grid scale variance for parameterizations of topographic effects such as gravity wave drag and turbulent mountain stress.
 
 For models based on a terrain-following coordinate the specification of $\Phi_s$ determines the location of vertical levels in that the levels closer to the surface has gradients proportional to the surface elevation. Hence the terrain-following coordinates are not perpendicular to the direction of the stratification (the radial direction) so errors can arise when calculations are needed along stratified layers. For example, the pressure-gradient force (PGF) in terrain-following coordinates splits into two terms; one that is proportional to the geopotential gradient and one that is proportional to the pressure gradient. These terms are of similar magnitude but opposite sign. For a perfectly balanced flow these terms should exactly cancel. Failure to preserve this balance can produce large spurious vertical velocities. This problem, referred to as the PGF error/problem, has significant implications for global atmospheric modeling, with efforts to tackle this problem stretching back as far as the late 1970s \citep{ZIJ1977BzPdA, DTMZIJ1986MAP}.  As global models reach finer spatial scales, the pressure gradient problem leads to an increasingly polluted dynamical solution near steep topography since an increase in horizontal resolution, in general, steepen slopes. 
+
 \begin{figure}[tb]
 \center\includegraphics[width=20pc,angle=0]{fig/tke-topo.pdf}
-  \caption{Log/log plot of spectral energy versus wavenumber ($k$) for the `raw' ~1km USGS data (GTOPO30), different levels of smoothing for ~100km CAM-SE topography, and CAM-FV. Note that the blue (4x, CAM-SE) and brown (CAM-FV) lines are overlaying. Solid straight line shows the $k^{-2}$ slope.{\color{red}{0x,4x,8x,... not explained yet}}}\label{fig:tke-topo}
+  \caption{Log/log plot of spectral energy versus wavenumber ($k$) for the `raw' ~1km USGS data (GTOPO30), different levels of smoothing for ~100km CAM-SE topography, and CAM-FV. Labels `04x', `08x', '16x' and `32x' CAM-SE, refer to different levels of smoothing, more precisely, four, eight, sixteen and thirtytwo applications of a `Laplacian' smoothing operator in CAM-SE, respectively. Label `CAM-FV' refers to the topography used in CAM-FV at $0.9^\circ \times 1.25^\circ$ resolution. `0x' CAM-SE is the unsmoothed topography on an approximately $1^\circ$ grid CAM-SE grid. Note that the blue (4x, CAM-SE) and brown (CAM-FV) lines are overlaying. Solid straight line shows the $k^{-2}$ slope. The associated surface elevations are shown on Figure \ref{fig:topo-smoothing-height}.}\label{fig:tke-topo}
 \end{figure} 
-When performing a spectral analysis of the raw elevation data, it is clear that Earth's topography decreases quite slowly with increasing wave number \citep[see, e.g., ][]{B1993GRL,U2001ECMWF,GLS2006NPG}. Consequently, there will always be a non-negligible spectral component of topography present near the grid scale at current and any foreseeable model resolution. It is common practice not to force the highest wave numbers directly in the model to alleviate obvious spurious noise \citep[e.g.][]{NSM1994JC,LH1997MWR}. Hence the raw topographic data is filtered to remove the highest wave numbers. There seem to be no standardized procedure, for example a test case suite, to objectively select level of smoothing and filtering method. 
+%
+% Source code for this Figure is on CGD machines: data/se/cross-section/topo.sh and topo.ncl
+%
+\begin{figure}[t]
+\vspace*{2mm}
+\begin{center}
+\includegraphics[width=8.3cm]{fig/topo-smoothing-height}
+\end{center}
+  \caption{Surface elevation in kilometers for a cross section along latitude $30^\circ$S (through Andes mountain range) for different representations of surface elevation. The labeling is the same as in Figure \ref{fig:tke-topo}.}\label{fig:topo-smoothing-height}
+\end{figure}
 
-While it is necessary to smooth topography to remove spurious grid-scale noise, it introduces two problems. Filtering will typically raise ocean points near step topography to non-zero elevation. Perhaps the most striking example is the Andes mountain range that extends one or two grid cells into the Pacific after the filtering operation ({\color{red}{Figure??}}). Ocean and land points are treated separately in weather/climate models so raised sea-points may potentially be problematic. Secondly, the filtering will generally reduce the height of local topographic maxima and given the importance of barrier heights in atmospheric dynamics, this could be a problem for the global angular momentum budget and could fundamentally change the flow. 
+When performing a spectral analysis of the raw elevation data (black line in Figure \ref{fig:tke-topo}), it is clear that Earth's topography decreases quite slowly with increasing wave number \citep[see also ][]{B1993GRL,U2001ECMWF,GLS2006NPG}. Consequently, there will always be a non-negligible spectral component of topography present near the grid scale at current and any foreseeable model resolution. It is common practice not to force the highest wave numbers directly in the model to alleviate obvious spurious noise \citep[e.g.][]{NSM1994JC,LH1997MWR}. Hence the raw topographic data is filtered to remove the highest wave numbers. There seem to be no standardized procedure, for example a test case suite, to objectively select the level of smoothing and filtering method. 
 
-To capture the barrier effect (blocking) that is sub-grid scale with respect to the smoothed topography, one may use {\em{envelope topography}} that adjusts the surface height with sub-grid scale topographic variance \citep{WTS1983QJRMS}. Loosely speaking, the peak heights are raised. A similar approach, but implemented as variational filtering, is taken in \cite{RTS2006QJRMS}; this method also imposes additional constraints such as enforcing zero elevation over ocean masks.
+While it is necessary to smooth topography to remove spurious grid-scale noise, it introduces two problems. Filtering will typically raise ocean points near step topography to non-zero elevation. Perhaps the most striking example is the Andes mountain range that extends one or two grid cells into the Pacific after the filtering operation (Figure \ref{fig:topo-smoothing-height}). Ocean and land points are treated separately in weather/climate models so raised sea-points may potentially be problematic. Secondly, the filtering will generally reduce the height of local topographic maxima and given the importance of barrier heights in atmospheric dynamics, this could be a problem for the global angular momentum budget and could fundamentally change the flow. 
 
-As mentioned above it is not straight forward to determine how to smooth topography. One approach is to try different filtering methods in the full model and evaluate the results in weather forecasts or longer climate simulations \citep{NSM1994JC,B1995QJRMS,H1996JC}. While this approach is certainly valuable, clearly the size of the Gibbs oscillations in global spectral models is reduced by smoothing topography, it does not take into account the interaction between the resolved-scale flow (dynamical core) and parameterizations of sub-grid scale processes (e.g., gravity wave drag, turbulent mountain stress). This interaction can be difficult to predict and commonly the sub-grid scale parameterization have been tuned over a number of years with the `default' smoothed surface elevation. Hence, this methodology runs the risk of deeming one smoothing less accurate than another due to lack of optimum tuning (and/or complexity) of the parameterizations.
+Probably the most common method, referred to as conventional smoothing in this paper, is to apply a 1-2-1 or similar diffusive filter that removes small scales. This approach will reduce local extrema (by lowering barrier heights and `filling' valleys) but preserves the mean surface elevation (total terrain volume above sea-level). To capture the barrier effect (blocking) that is sub-grid scale with respect to the smoothed topography, two approaches to have been put forward in the literature to deepen valleys and increase peak heights while filtering out small scales: {\em{envelope topography}} adjusts the surface height with sub-grid scale topographic variance \citep{WTS1983QJRMS,MS1982JMSJ}. Loosely speaking, the otherwise smoothed peak heights are raised. This process may perturb the average surface height. Alternatively, one may use Silhouette averaging that adds mass 
+
+A similar approach, but implemented as variational filtering, is taken in \cite{RTS2006QJRMS}; this method also imposes additional constraints such as enforcing zero elevation over ocean masks.
+
+\cite{SSM2005WRF,WT2004RAMS} Silhouette topography? \cite{B1990CSU}
+
+As mentioned above it is not straight forward to determine an optimal smoothing algorithm for topography and determine the amount of smoothing. One approach is to try different filtering methods in the full model and evaluate the results in weather forecasts or longer climate simulations \citep{NSM1994JC,B1995QJRMS,H1996JC}. While this approach is certainly valuable, clearly the size of the Gibbs oscillations in global spectral models is reduced by smoothing topography, it does not take into account the interaction between the resolved-scale flow (dynamical core) and parameterizations of sub-grid scale processes (e.g., gravity wave drag, turbulent mountain stress). This interaction can be difficult to predict and commonly the sub-grid scale parameterization have been tuned over a number of years with the `default' smoothed surface elevation. Hence, this methodology runs the risk of deeming one smoothing less accurate than another due to lack of optimum tuning (and/or complexity) of the parameterizations.
 
 Another approach is to use idealized simulation with no parameterizations to determine what scales are adequately resolved and which are poorly resolved. \cite{DB2001QJRMS} kept the physical scale of an idealized two-dimensional and three-dimensional isolated hill fixed and observed how the coarser resolution results differ from the high-resolution simulation. This can then provide guide-lines on how to smooth topography in the full model. Similar idealized (shallow water) experiments where used in \cite{RTS2006QJRMS} to optimally smooth topography. While these idealized tests provide a `cleaner' approach to smoothing terrain, they do not consider the coupling with sub-grid scale processes in the sense that the high resolution solution may resolve gravity waves that the lower resolution simulation does not so in a sense the lower resolution model should include a parameterization for the gravity waves below a certain scale.
 %
@@ -335,19 +352,12 @@ where $g$ is the gravitational constant.
 
 TEXT
 
-\subsection{Sample topography smoothing experiments with CAM-SE}
-HOMME \citep[High-Order Method Modeling Environment; ][]{HOMME,DetAl2005IJHPCA}\\
+\subsection{Example topography smoothing experiments with CAM-SE}
+CAM-SE uses the spectral element dynamical core from HOMME \citep[High-Order Method Modeling Environment; ][]{HOMME,DetAl2005IJHPCA}. vertical advection, time-stepping, ... Results from the approximately 1$^\circ$ resolution simulations are shown. This configuration is referred to as NE30NP4 where there are 30$\times$30 elements on each cubed-sphere panel and 4$\times$4 Gauss-Lobatto-Legendre (GLL) quadrature points in each element.
 
 
 
 
-\begin{figure}[t]
-\vspace*{2mm}
-\begin{center}
-\includegraphics[width=8.3cm]{fig/topo-smoothing-height}
-\end{center}
-  \caption{Surface elevation in kilometers for a cross section along latitude $30^\circ$S (through Andes mountain range) for different representations of surface elevation. Labels `4x', `8x', '16x' and `32x', refer to different levels of smoothing, more precisely, four, eight, sixteen and thirtytwo applications of a `Laplacian' smoothing operator in CAM-SE, respectively. Label `FV $0.9^\circ \times 1.25^\circ$' refers to the topography used in CAM-FV. `0x' is the unsmoothed topography on an approximately $1^\circ$ grid.}\label{fig:topo-smoothing-height}
-\end{figure}
 \begin{figure*}[t]
 \vspace*{2mm}
 \begin{center}
@@ -400,7 +410,7 @@ The topography generation software has been tested for regular latitude-longitud
 
 
 \begin{acknowledgements}
-NCAR is sponsored by the National Science Foundation (NSF). Thanks to DOE ...
+NCAR is sponsored by the National Science Foundation (NSF). Thanks to DOE ... Thanks to Sanghun Park for providing data for the GTOPO30 power spectrum.
 \end{acknowledgements}
 
 
